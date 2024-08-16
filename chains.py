@@ -13,10 +13,8 @@ llm = ChatOpenAI(model='gpt-4o-mini')
 
 parser = JsonOutputToolsParser(return_id=True)
 
-AnswerSchema = convert_to_openai_function(AnswerQuestion, strict=True)
-
 responder_llm = llm.with_structured_output(
-    AnswerSchema,
+    AnswerQuestion.schema(),
     method="json_schema"
 )
 
@@ -58,7 +56,7 @@ than 250 words.
 """
 
 revisor_llm = llm.with_structured_output(
-    ReviseAnswer,
+    ReviseAnswer.schema(),
     method="json_schema"
 )
 
