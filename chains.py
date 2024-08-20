@@ -1,22 +1,15 @@
 import datetime
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
-from langchain_core.output_parsers import JsonOutputToolsParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from schemas import AnswerQuestion, ReviseAnswer
-from langchain_core.utils.function_calling import convert_to_openai_function
 
 load_dotenv()
 
 llm = ChatOpenAI(model='gpt-4o-mini')
 
-parser = JsonOutputToolsParser(return_id=True)
-
-responder_llm = llm.with_structured_output(
-    AnswerQuestion.schema(),
-    method="json_schema"
-)
+responder_llm = llm.bind_tools(tools=[AnswerQuestion], tool_choice="AnswerQuestion", strict=True)
 
 actor_prompt_template = ChatPromptTemplate(
     [
@@ -55,18 +48,18 @@ revise_instructions = """Revise your previous answer using the new information.
 than 250 words.
 """
 
-revisor_llm = llm.with_structured_output(
-    ReviseAnswer.schema(),
-    method="json_schema"
-)
+revisor_llm = llm.bind_tools(tools=[ReviseAnswer], tool_choice="ReviseAnswer", strict=True)
 
 revisor = actor_prompt_template.partial(
     first_instruction=revise_instructions
 ) | revisor_llm
 
 if __name__ == "__main__":
-    human_message = ["Write about e-sports analytics problem domain, list startups that do that and raised capital."]
+    human_message = HumanMessage(
+        content="Write about AI-Powered SOC / autonomous soc  problem domain,"
+                " list startups that do that and raised capital."
+    )
 
-    res = first_responder.invoke(input={"messages": human_message})
+    res = first_responder.invoke(input={"messages": [human_message]})
 
     print(res)
